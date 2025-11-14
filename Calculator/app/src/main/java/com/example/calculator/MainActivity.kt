@@ -14,16 +14,12 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
 
-    /** Buffer del número que se está escribiendo actualmente */
     private var currentInput = StringBuilder()
 
-    /** Tokens de la expresión en curso (números y operadores) */
     private val tokens = mutableListOf<Token>()
 
-    /** Formateo amigable de números */
     private val numberFormat = DecimalFormat("#,###.########")
 
-    /** Modelado mínimo de tokens */
     private sealed interface Token {
         data class Number(val value: Double) : Token
         data class Operator(val symbol: String, val precedence: Int) : Token
@@ -57,8 +53,6 @@ class MainActivity : AppCompatActivity() {
         binding.btnToggleSign.setOnClickListener { onToggleSign() }
     }
 
-    // --- Handlers ---
-
     private fun onNumberClicked(view: View) {
         val digit = (view as Button).text.toString()
         if (currentInput.toString() == "0") currentInput.clear()
@@ -74,13 +68,11 @@ class MainActivity : AppCompatActivity() {
             parseCurrentInput()?.let { tokens.add(Token.Number(it)) }
             currentInput.clear()
         } else if (tokens.isEmpty() && op.symbol == "-") {
-            // permitir iniciar número negativo con operador menos
             if (currentInput.isEmpty()) currentInput.append("-")
             updateDisplays()
             return
         }
 
-        // Si el último token es operador, reemplazarlo (corrección de operador)
         val last = tokens.lastOrNull()
         if (last is Token.Operator) {
             tokens[tokens.lastIndex] = op
@@ -94,7 +86,6 @@ class MainActivity : AppCompatActivity() {
     private fun onEquals() {
         val exprForPreview = buildExpressionString(includeCurrent = true)
 
-        // Cerrar número en curso si existe
         if (currentInput.isNotEmpty() && currentInput.toString() != "-") {
             parseCurrentInput()?.let { tokens.add(Token.Number(it)) }
             currentInput.clear()
@@ -106,7 +97,6 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        // Mostrar preview "expr = resultado" y dejar el resultado como base
         tokens.clear()
         tokens.add(Token.Number(result))
         currentInput.clear()
@@ -134,7 +124,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun onPercent() {
-        // aplica % sobre el número que se está editando
         val v = parseCurrentInput() ?: return
         val pct = v / 100.0
         currentInput.clear().append(trimDouble(pct))
@@ -151,8 +140,6 @@ class MainActivity : AppCompatActivity() {
         updateDisplays()
     }
 
-    // --- Utilidades de expresión y preview ---
-
     private fun toOperator(symbolRaw: String): Token.Operator? = when (symbolRaw) {
         "+", "＋" -> Token.Operator("+", 1)
         "-", "−" -> Token.Operator("-", 1)
@@ -166,7 +153,6 @@ class MainActivity : AppCompatActivity() {
         return currentInput.toString().toDoubleOrNull()
     }
 
-    /** Evalúa los tokens + el número en curso (si existe), ignorando un operador colgante al final. */
     private fun evaluatePreview(): Double? {
         val work = mutableListOf<Token>()
         work.addAll(tokens)
@@ -181,7 +167,6 @@ class MainActivity : AppCompatActivity() {
         return evaluateWithPrecedence(work)
     }
 
-    /** Shunting-yard (sin paréntesis) con control de división por cero */
     private fun evaluateWithPrecedence(tks: List<Token>): Double? {
         val values = Stack<Double>()
         val ops = Stack<Token.Operator>()
@@ -237,7 +222,6 @@ class MainActivity : AppCompatActivity() {
         binding.tvPreview.text = buildExpressionString(includeCurrent = true)
     }
 
-    /** Construye la cadena de la expresión para el preview */
     private fun buildExpressionString(includeCurrent: Boolean): String {
         val sb = StringBuilder()
         tokens.forEach { tk ->
@@ -268,11 +252,6 @@ class MainActivity : AppCompatActivity() {
         return if (txt == "-0") "0" else txt
     }
 
-    /**
-     * Actualiza pantallas:
-     * - Preview: "expresión = resultado" (si evaluable)
-     * - Display principal: número en edición o resultado parcial
-     */
     private fun updateDisplays(
         showEqualsMark: Boolean = false,
         customPreview: String? = null
@@ -292,7 +271,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Display principal
         if (currentInput.isNotEmpty()) {
             val s = currentInput.toString()
             binding.tvDisplay.text = when {
